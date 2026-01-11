@@ -1,7 +1,7 @@
 """add reports table
 
 Revision ID: 20251227_1917
-Revises: 20251226_1359
+Revises: bd61a4fb8a8b
 Create Date: 2025-12-27 19:17:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '20251227_1917'
-down_revision = '20251226_1359'
+down_revision = 'bd61a4fb8a8b'
 branch_labels = None
 depends_on = None
 
