@@ -18,8 +18,7 @@ from app.schemas.common import PaginationMeta
 from app.services.image import ImageService
 from app.services.storage import get_storage_service
 from app.services.text_validation_ai import get_text_validation_ai
-from app.services.image_validation_ai import get_image_validation_ai
-from app.services.nsfw_detector import detect_nsfw
+from app.services.hybrid_image_validator import get_hybrid_validator
 from geoalchemy2.elements import WKTElement
 
 logger = logging.getLogger(__name__)
@@ -277,47 +276,46 @@ async def create_post(
                 detail="Debes subir entre 1 y 3 imágenes"
             )
 
-        # Procesar todas las imágenes
-        images_data = []
-        validation_service_used = None
-        validation_reason = None
+        # FASE 1: Leer y validar formato/tamaño de todas las imágenes
+        logger.info(f"📦 [BACKEND] Leyendo {len(images)} imágenes...")
+        raw_images_bytes = []
 
         for idx, image in enumerate(images):
-            logger.info(f"📸 [BACKEND] Procesando imagen {idx + 1}: {image.filename}, {image.content_type}")
+            logger.info(f"📸 [BACKEND] Leyendo imagen {idx + 1}: {image.filename}, {image.content_type}")
 
             # Leer imagen
             image_bytes = await image.read()
             logger.info(f"📦 [BACKEND] Imagen {idx + 1} leída: {len(image_bytes)} bytes")
 
-            # Validar imagen (formato y tamaño)
+            # Validar formato y tamaño
             ImageService.validate_image(image_bytes, max_size_mb=10)
 
-            # Validar contenido NSFW con Cloudflare AI (primera imagen solamente para performance)
-            if idx == 0:
-                image_validator = get_image_validation_ai()
-                cloudflare_result = await image_validator.validate_image(image_bytes)
+            raw_images_bytes.append(image_bytes)
 
-                # Si Cloudflare AI falla o está deshabilitado, usar fallback Python
-                if cloudflare_result is None:
-                    logger.warning("[Validation] Cloudflare AI falló, usando fallback Python NSFW")
-                    python_result = await detect_nsfw(image_bytes)
+        # FASE 2: Validación híbrida de contenido (TODAS las imágenes)
+        logger.info(f"🔍 [BACKEND] Iniciando validación híbrida de {len(raw_images_bytes)} imágenes...")
+        hybrid_validator = get_hybrid_validator()
+        validation_result = await hybrid_validator.validate_all(raw_images_bytes)
 
-                    if not python_result["is_valid"]:
-                        pending_approval = True
-                        validation_service_used = python_result["service"]
-                        validation_reason = python_result["reason"]
-                        logger.warning(f"[Validation] Imagen marcada para revisión (Python): {validation_reason}")
+        validation_service_used = None
+        validation_reason = None
 
-                elif not cloudflare_result["is_valid"]:
-                    pending_approval = True
-                    validation_service_used = cloudflare_result["service"]
-                    validation_reason = cloudflare_result["reason"]
-                    logger.warning(f"[Validation] Imagen marcada para revisión (Cloudflare): {validation_reason}")
+        if not validation_result["is_valid"]:
+            # Marcar para moderación manual
+            pending_approval = True
+            validation_service_used = validation_result["service"]
+            validation_reason = validation_result["reason"]
+            logger.warning(f"⚠️ [BACKEND] Imágenes marcadas para moderación: {validation_reason}")
+        else:
+            logger.info(f"✅ [BACKEND] Todas las imágenes aprobadas por validador híbrido ({validation_result['service']})")
 
-            # Procesar imagen (resize + thumbnail)
+        # FASE 3: Procesar imágenes (resize + thumbnail)
+        logger.info(f"🖼️ [BACKEND] Procesando {len(raw_images_bytes)} imágenes...")
+        images_data = []
+
+        for idx, image_bytes in enumerate(raw_images_bytes):
             processed_image, thumbnail = ImageService.process_upload(image_bytes)
             logger.info(f"✅ [BACKEND] Imagen {idx + 1} procesada: {len(processed_image)} bytes, thumbnail: {len(thumbnail)} bytes")
-
             images_data.append((processed_image, thumbnail))
 
         # Subir todas las imágenes a R2
