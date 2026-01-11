@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Locate, Filter, X, Flag } from 'lucide-react'
+import { Locate, Filter, X } from 'lucide-react'
 
 import { API_URL } from '@/config/api'
-import ReportModal from '@/components/ReportModal'
 
 // Fix Leaflet default icon issue with Vite
 delete L.Icon.Default.prototype._getIconUrl
@@ -93,17 +92,6 @@ export default function Map() {
     animal_type: '',
   })
   const [mapRef, setMapRef] = useState(null)
-
-  // Report modal state
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [reportItemId, setReportItemId] = useState(null)
-  const [reportItemType, setReportItemType] = useState(null) // 'post' or 'alert'
-
-  const handleReport = (id, type) => {
-    setReportItemId(id)
-    setReportItemType(type)
-    setIsReportModalOpen(true)
-  }
 
   // Default center: Buenos Aires
   const defaultCenter = [-34.6037, -58.3816]
@@ -224,16 +212,6 @@ export default function Map() {
                       Ver detalles →
                     </p>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleReport(post.id, 'post')
-                    }}
-                    className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800 transition-colors"
-                  >
-                    <Flag size={12} />
-                    Reportar
-                  </button>
                 </div>
               </Popup>
             </Marker>
@@ -265,16 +243,6 @@ export default function Map() {
                       Ver detalles →
                     </p>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleReport(alert.id, 'alert')
-                    }}
-                    className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800 transition-colors"
-                  >
-                    <Flag size={12} />
-                    Reportar
-                  </button>
                 </div>
               </Popup>
             </Marker>
@@ -382,14 +350,6 @@ export default function Map() {
           </div>
         </div>
       </div>
-
-      {/* Report Modal */}
-      <ReportModal
-        postId={reportItemType === 'post' ? reportItemId : undefined}
-        alertId={reportItemType === 'alert' ? reportItemId : undefined}
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-      />
     </div>
   )
 }

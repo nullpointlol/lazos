@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 
 const REPORT_REASONS = [
-  { value: 'incorrect_location', label: 'Ubicación incorrecta en el mapa' },
-  { value: 'found', label: 'Ya fue encontrado/adoptado' },
   { value: 'not_animal', label: 'No es un animal' },
   { value: 'inappropriate', label: 'Contenido inapropiado' },
   { value: 'spam', label: 'Spam' },
