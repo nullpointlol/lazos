@@ -69,7 +69,16 @@ class Post(Base):
     )
 
     # Sequential post number for display (e.g., #1, #2, #3)
-    post_number = Column(Integer, nullable=True, unique=True, index=True)
+    # NOTE: Commented out until migration 20260111_0000 is run in production
+    # Uncomment after running: alembic upgrade head
+    # post_number_seq = Sequence('posts_post_number_seq', optional=True)
+    # post_number = Column(
+    #     Integer,
+    #     post_number_seq,
+    #     nullable=True,
+    #     unique=True,
+    #     index=True
+    # )
 
     # Image URLs (required)
     image_url = Column(String(500), nullable=False)
