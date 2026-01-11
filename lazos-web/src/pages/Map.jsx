@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Locate, Filter, X } from 'lucide-react'
+import { Locate, Filter, X, Flag } from 'lucide-react'
 
 import { API_URL } from '@/config/api'
+import ReportModal from '@/components/ReportModal'
 
 // Fix Leaflet default icon issue with Vite
 delete L.Icon.Default.prototype._getIconUrl
@@ -92,6 +93,17 @@ export default function Map() {
     animal_type: '',
   })
   const [mapRef, setMapRef] = useState(null)
+
+  // Report modal state
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [reportItemId, setReportItemId] = useState(null)
+  const [reportItemType, setReportItemType] = useState(null) // 'post' or 'alert'
+
+  const handleReport = (id, type) => {
+    setReportItemId(id)
+    setReportItemType(type)
+    setIsReportModalOpen(true)
+  }
 
   // Default center: Buenos Aires
   const defaultCenter = [-34.6037, -58.3816]
@@ -187,29 +199,41 @@ export default function Map() {
               icon={postIcon}
             >
               <Popup>
-                <div
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/post/${post.id}`)}
-                >
-                  <div className="flex gap-2 mb-2">
-                    <img
-                      src={post.thumbnail_url}
-                      alt="Post"
-                      className="w-16 h-16 object-cover rounded"
-                      onError={(e) => {
-                        e.target.src = 'https://placehold.co/64x64/e5e7eb/6b7280?text=Sin+imagen'
-                      }}
-                    />
-                    <div>
-                      <p className="font-semibold text-sm">
-                        {animalLabels[post.animal_type]}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Post</p>
+                <div className="max-w-[200px]">
+                  <div
+                    className="cursor-pointer mb-2"
+                    onClick={() => navigate(`/post/${post.id}`)}
+                  >
+                    <div className="flex gap-2 mb-2">
+                      <img
+                        src={post.thumbnail_url}
+                        alt="Post"
+                        className="w-16 h-16 object-cover rounded"
+                        onError={(e) => {
+                          e.target.src = 'https://placehold.co/64x64/e5e7eb/6b7280?text=Sin+imagen'
+                        }}
+                      />
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {animalLabels[post.animal_type]}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Post</p>
+                      </div>
                     </div>
+                    <p className="text-xs text-primary hover:underline">
+                      Ver detalles →
+                    </p>
                   </div>
-                  <p className="text-xs text-primary hover:underline">
-                    Ver detalles →
-                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleReport(post.id, 'post')
+                    }}
+                    className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800 transition-colors"
+                  >
+                    <Flag size={12} />
+                    Reportar
+                  </button>
                 </div>
               </Popup>
             </Marker>
@@ -223,22 +247,34 @@ export default function Map() {
               icon={alertIcon}
             >
               <Popup>
-                <div
-                  className="cursor-pointer max-w-[200px]"
-                  onClick={() => navigate(`/avisos/${alert.id}`)}
-                >
-                  <div className="mb-2">
-                    <p className="font-semibold text-sm">
-                      {animalLabels[alert.animal_type]}
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-2">Aviso rápido</p>
-                    <p className="text-xs text-foreground line-clamp-2">
-                      {alert.description}
+                <div className="max-w-[200px]">
+                  <div
+                    className="cursor-pointer mb-2"
+                    onClick={() => navigate(`/avisos/${alert.id}`)}
+                  >
+                    <div className="mb-2">
+                      <p className="font-semibold text-sm">
+                        {animalLabels[alert.animal_type]}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-2">Aviso rápido</p>
+                      <p className="text-xs text-foreground line-clamp-2">
+                        {alert.description}
+                      </p>
+                    </div>
+                    <p className="text-xs text-primary hover:underline">
+                      Ver detalles →
                     </p>
                   </div>
-                  <p className="text-xs text-primary hover:underline">
-                    Ver detalles →
-                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleReport(alert.id, 'alert')
+                    }}
+                    className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800 transition-colors"
+                  >
+                    <Flag size={12} />
+                    Reportar
+                  </button>
                 </div>
               </Popup>
             </Marker>
@@ -346,6 +382,14 @@ export default function Map() {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        postId={reportItemType === 'post' ? reportItemId : undefined}
+        alertId={reportItemType === 'alert' ? reportItemId : undefined}
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      />
     </div>
   )
 }
