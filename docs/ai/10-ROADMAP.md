@@ -4,6 +4,13 @@
 
 **1. Integración CLIP para Búsqueda por Similitud**
 
+**Estado Actual:**
+- ✅ Campo `embedding VECTOR(512)` existe en DB
+- ✅ Índice HNSW configurado
+- ❌ NO se generan embeddings al crear posts
+- ❌ Endpoint `/api/v1/search/similar` NO implementado
+- ❌ Frontend NO tiene UI para búsqueda por imagen
+
 **Objetivo:** Permitir a usuarios subir foto de su mascota perdida y encontrar posts similares.
 
 **Pasos:**

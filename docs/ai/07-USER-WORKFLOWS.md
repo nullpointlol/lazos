@@ -85,13 +85,13 @@
 
 ```
 1. Usuario ve un post inapropiado en PostDetail o en el mapa
-2. Click en botón "Reportar" (contenido) o "Ubicación incorrecta"
+2. Click en botón "Reportar"
 3. ReportModal abre con razones predefinidas:
+   - ◯ No es un animal
    - ◯ Contenido inapropiado
    - ◯ Spam
-   - ◯ Ubicación incorrecta
    - ◯ Otro
-4. Usuario selecciona razón (ej: "Spam" o "Ubicación incorrecta")
+4. Usuario selecciona razón (ej: "Spam" o "No es un animal")
 5. Opcionalmente escribe descripción adicional (max 1000 chars)
 6. Click en "Enviar reporte"
 7. Frontend: POST /api/v1/reports
@@ -138,7 +138,17 @@
 
 ```
 1. Usuario crea un post con imágenes
-2. Backend recibe el post y ejecuta validación híbrida:
+
+2. Frontend valida imágenes con NSFW.js (client-side):
+   - Detecta contenido inapropiado antes de enviar
+   - Si detecta: muestra error y no permite envío
+   - Si borderline: permite pero advierte
+
+3. Frontend valida texto con validateText():
+   - 9 tipos de validaciones (spam, nonsense, ofensivo, etc.)
+   - Sanitiza texto antes de enviar
+
+4. Backend recibe el post y ejecuta validación híbrida:
 
    FASE 1 - Python NSFW (rápida, todas las imágenes en paralelo):
    - Detecta tonos de piel sospechosos (~200ms)
@@ -152,7 +162,7 @@
    - Analiza descripción semánticamente
    - Detecta spam, URLs sospechosas, contenido inapropiado
 
-3. Resultado de validación:
+5. Resultado de validación:
 
    CASO A - Post limpio (95% de los casos):
    - pending_approval = False
@@ -214,14 +224,14 @@
 
    OPCIÓN A - Aprobar post pendiente (pestaña Posts Pendientes):
    - Click en "Aprobar"
-   - POST /api/v1/admin/posts/:id/approve
+   - POST /api/v1/admin/pending/:post_id/approve
    - Backend: pending_approval = False
    - Post se hace visible públicamente
    - Frontend: remueve de lista, actualiza stats
 
    OPCIÓN B - Rechazar post pendiente:
    - Click en "Rechazar"
-   - POST /api/v1/admin/posts/:id/reject
+   - POST /api/v1/admin/pending/:post_id/reject
    - Backend: is_active = False
    - Post eliminado definitivamente
    - Frontend: remueve de lista, actualiza stats

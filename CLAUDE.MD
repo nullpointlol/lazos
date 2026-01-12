@@ -1,7 +1,7 @@
 # CLAUDE.MD - Guía para Asistentes IA
 
-**Versión**: 1.0
-**Última actualización**: 2026-01-10
+**Versión**: 1.1
+**Última actualización**: 2026-01-12
 **Propósito**: Guía rápida para agentes IA (Claude, etc.) trabajando en el proyecto LAZOS
 
 ---
@@ -304,6 +304,23 @@ Antes de crear un PR, verificar:
 
 ---
 
+## 📊 Features Adicionales Documentadas
+
+### Validación Client-Side
+- **useContentValidation**: Hook para validar imágenes con NSFW.js
+- **validateText**: Utility con 9 tipos de validaciones
+- **sanitizeText**: Limpieza de texto antes de enviar
+- **containsContactInfo**: Detecta teléfonos/emails
+
+### Datos Estáticos (Offline-First)
+- Provincias y localidades desde JSON local (`/data/provincias.json`, `/data/localidades.json`)
+- 24 provincias argentinas
+- 3,979 localidades
+- Mejora performance y funciona sin conexión
+
+### Componentes Adicionales
+- **HelpModal**: Info del proyecto, privacidad, datos abiertos
+
 ## 🐛 Debugging
 
 ### Backend
@@ -350,6 +367,22 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 **Causa**: Dependencias no instaladas o venv no activado
 **Solución**: `pip install -r requirements.txt` con venv activado
 
+## ⚠️ Diferencias Importantes: Documentación vs Implementación
+
+### Razones de Reporte
+- **Documentación anterior**: `inappropriate`, `spam`, `incorrect_location`, `other`
+- **Implementación real**: `not_animal`, `inappropriate`, `spam`, `other`
+- ✅ Actualizado en toda la documentación
+
+### Rutas Admin
+- **Documentación anterior**: `/admin/posts/{id}/approve`, `/admin/pending-posts`
+- **Implementación real**: `/admin/pending/{post_id}/approve`, `/admin/pending`
+- ✅ Actualizado en toda la documentación
+
+### Búsqueda por Similitud CLIP
+- **Estado**: Campo `embedding` existe en DB pero endpoint NO implementado
+- ⚠️ Feature planificada pero NO disponible (ver 10-ROADMAP.md)
+
 ---
 
 ## 🎨 Estilo y UX
@@ -373,10 +406,11 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 - **No confiar en input del usuario**: Validar con Pydantic
 - **SQL injection**: Usar SQLAlchemy ORM (nunca raw SQL con f-strings)
 - **XSS**: FastAPI escapa automáticamente JSON
-- **NSFW content - Validación Híbrida de Imágenes (2 fases)**:
-  - **Fase 1 (rápida)**: Python NSFW detector valida TODAS las imágenes en paralelo (~200ms)
-  - **Fase 2 (precisa)**: Cloudflare AI Workers valida solo imágenes sospechosas en paralelo (~1-2s)
-  - Validación semántica de texto con Cloudflare AI (Llama-3-8b)
+- **NSFW content - Validación Multi-Capa**:
+  - **Client-side (Frontend)**: NSFW.js valida imágenes antes de enviar
+  - **Server-side Fase 1 (rápida)**: Python NSFW detector valida TODAS las imágenes en paralelo (~200ms)
+  - **Server-side Fase 2 (precisa)**: Cloudflare AI Workers valida solo imágenes sospechosas en paralelo (~1-2s)
+  - **Validación de texto**: validateText.js (client) + Cloudflare AI Llama-3-8b (server)
   - Posts sospechosos van a moderación manual (pending_approval=True)
   - **Performance**: 95% de posts se validan en < 300ms, ahorro del 97% en llamadas API
 - **Rate limiting**: Implementar en producción (pendiente)
@@ -384,7 +418,11 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 ### Frontend
 - **No almacenar secretos**: Nunca en localStorage/sessionStorage
 - **HTTPS**: Solo en producción (Vercel lo maneja automáticamente)
-- **Content validation**: NSFW.js + validación de texto antes de enviar
+- **Content validation Multi-Capa**:
+  - NSFW.js para imágenes (client-side)
+  - validateText.js con 9 validaciones (spam, nonsense, ofensivo, etc.)
+  - sanitizeText() antes de enviar
+  - Detecta teléfonos/emails con containsContactInfo()
 
 ---
 

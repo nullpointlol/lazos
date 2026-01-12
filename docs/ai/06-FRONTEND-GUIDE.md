@@ -243,7 +243,107 @@ export const usePullToRefresh = (onRefresh) => {
 }
 ```
 
-### 6.3 Componentes Clave
+**useContentValidation.js:**
+```javascript
+export const useContentValidation = () => {
+  const [model, setModel] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Carga lazy del modelo NSFW.js
+  useEffect(() => {
+    const loadModel = async () => {
+      try {
+        setLoading(true)
+        const nsfw = await import('nsfwjs')
+        const model = await nsfw.load()
+        setModel(model)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadModel()
+  }, [])
+
+  const validateImage = async (imageFile) => {
+    if (!model) throw new Error('Modelo no cargado')
+
+    const img = document.createElement('img')
+    img.src = URL.createObjectURL(imageFile)
+    await img.decode()
+
+    const predictions = await model.classify(img)
+    const inappropriate = predictions.find(p =>
+      ['Porn', 'Sexy', 'Hentai'].includes(p.className) && p.probability > 0.6
+    )
+    const borderline = predictions.find(p =>
+      ['Porn', 'Sexy', 'Hentai'].includes(p.className) && p.probability > 0.3
+    )
+
+    return {
+      safe: !inappropriate,
+      reason: inappropriate ? `Contenido inapropiado detectado: ${inappropriate.className}` : null,
+      shouldModerate: !!borderline && !inappropriate
+    }
+  }
+
+  const validateImages = async (imageFiles) => {
+    const results = await Promise.all(imageFiles.map(validateImage))
+    return results
+  }
+
+  return { validateImage, validateImages, loading, error }
+}
+```
+
+### 6.3 Utilities
+
+**validateText.js:**
+```javascript
+// Validaciones implementadas:
+// 1. Mínimo 10 caracteres
+// 2. Debe contener letras (no solo emojis/números)
+// 3. Detección de spam (palabras repetidas > 40%)
+// 4. Detección de nonsense (patrones aleatorios)
+// 5. Palabras similares/repetidas
+// 6. Máximo 3 URLs
+// 7. Mayúsculas excesivas (> 50%)
+// 8. Lista de palabras ofensivas españolas
+// 9. Números de teléfono (rechaza en descripción)
+
+export const validateText = (text) => {
+  const errors = []
+
+  if (text.length < 10) {
+    errors.push('La descripción debe tener al menos 10 caracteres')
+  }
+
+  if (!/[a-záéíóúñA-ZÁÉÍÓÚÑ]{3,}/.test(text)) {
+    errors.push('La descripción debe contener texto legible')
+  }
+
+  // ... 7 validaciones más
+
+  return { valid: errors.length === 0, errors }
+}
+
+export const sanitizeText = (text) => {
+  return text
+    .trim()
+    .replace(/\s+/g, ' ')  // múltiples espacios → 1
+    .replace(/(.)\1{4,}/g, '$1$1$1')  // max 3 caracteres repetidos
+}
+
+export const containsContactInfo = (text) => {
+  const phonePattern = /\d{8,}/
+  const emailPattern = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i
+  return phonePattern.test(text) || emailPattern.test(text)
+}
+```
+
+### 6.4 Componentes Clave
 
 **FilterBar.jsx:**
 ```jsx
@@ -414,6 +514,47 @@ const ReportModal = ({ postId, alertId, isOpen, onClose }) => {
             </Button>
           </>
         )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+```
+
+**HelpModal.jsx:**
+```jsx
+const HelpModal = ({ isOpen, onClose }) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Sobre LAZOS</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <section>
+            <h3>¿Qué es LAZOS?</h3>
+            <p>Plataforma colaborativa para reportar avistamientos de mascotas en vía pública.</p>
+          </section>
+
+          <section>
+            <h3>Privacidad</h3>
+            <p>No vendemos datos. API pública. Posts anónimos permitidos.</p>
+          </section>
+
+          <section>
+            <h3>Datos Abiertos</h3>
+            <p>Toda la información es accesible vía API REST pública.</p>
+          </section>
+
+          <section>
+            <h3>Apoyar el proyecto</h3>
+            <p>
+              <a href="https://cafecito.app/lazos" target="_blank">☕ Invitame un café</a>
+              <br />
+              <a href="https://github.com/nullpointlol/lazos" target="_blank">⭐ GitHub</a>
+            </p>
+          </section>
+        </div>
       </DialogContent>
     </Dialog>
   )

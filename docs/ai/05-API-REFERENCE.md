@@ -173,6 +173,7 @@ GET /api/v1/search
     }
 
 POST /api/v1/search/similar
+  ⚠️ NO IMPLEMENTADO - Campo embedding existe en DB pero endpoint no disponible
   Descripción: Búsqueda por similitud de imagen con CLIP
   Body (multipart/form-data):
     - image: File (required)
@@ -187,7 +188,7 @@ POST /api/v1/search/similar
         }
       ]
     }
-  NOTA: Requiere embeddings generados (pendiente)
+  NOTA: Feature planificada pero NO implementada
 ```
 
 #### Mapa
@@ -227,19 +228,19 @@ GET /api/v1/map/points/unified
 
 ```yaml
 POST /api/v1/reports
-  Descripción: Reportar un post o alert (contenido inapropiado, spam, ubicación incorrecta)
+  Descripción: Reportar un post o alert (contenido inapropiado, spam, no es animal, etc.)
   Body (JSON):
     - post_id: str (uuid, optional)
     - alert_id: str (uuid, optional)
-    - reason: str (required, inappropriate|spam|incorrect_location|other)
+    - reason: str (required, not_animal|inappropriate|spam|other)
     - description: str (optional, max 1000)
   Response: 201 ReportResponse
   Nota: Guarda reporter_ip automáticamente
 
   Razones:
+    - not_animal: No es un animal (foto de otra cosa)
     - inappropriate: Contenido inapropiado (NSFW, violencia, etc.)
     - spam: Publicación spam o irrelevante
-    - incorrect_location: Ubicación incorrecta del avistamiento
     - other: Otro motivo (requiere descripción)
 
 GET /api/v1/admin/reports
@@ -290,7 +291,7 @@ GET /api/v1/admin/stats
       "pending_approval": 3
     }
 
-GET /api/v1/admin/pending-posts
+GET /api/v1/admin/pending
   Descripción: Listar posts pendientes de aprobación (pending_approval=True)
   Headers: X-Admin-Password
   Response: 200
@@ -303,18 +304,19 @@ GET /api/v1/admin/pending-posts
           "images": [...],
           "pending_approval": true,
           "moderation_reason": "Imagen sospechosa detectada por validación (Python NSFW: 0.85)",
+          "validation_service": "python_nsfw",
           "created_at": "...",
           ...
         }
       ]
     }
 
-POST /api/v1/admin/posts/{id}/approve
+POST /api/v1/admin/pending/{post_id}/approve
   Descripción: Aprobar post pendiente (pending_approval=False)
   Headers: X-Admin-Password
   Response: 200 PostResponse
 
-POST /api/v1/admin/posts/{id}/reject
+POST /api/v1/admin/pending/{post_id}/reject
   Descripción: Rechazar post pendiente (soft delete is_active=False)
   Headers: X-Admin-Password
   Response: 204
@@ -339,6 +341,7 @@ class PostResponse(BaseModel):
     is_active: bool
     pending_approval: bool  # True si está pendiente de moderación
     moderation_reason: str | None  # Motivo de moderación (validación de imágenes/texto)
+    validation_service: str | None  # Servicio validador: python_nsfw, cloudflare_ai, text_ai
     contact_method: str | None
     images: list[PostImageResponse]  # array de imágenes
 
@@ -371,6 +374,12 @@ class ReportCreate(BaseModel):
     alert_id: UUID | None = None
     reason: ReportReasonEnum  # not_animal/inappropriate/spam/other
     description: str | None = Field(None, max_length=1000)
+
+class ReportReasonEnum(str, Enum):
+    not_animal = "not_animal"
+    inappropriate = "inappropriate"
+    spam = "spam"
+    other = "other"
 
 class ReportResponse(BaseModel):
     id: UUID
