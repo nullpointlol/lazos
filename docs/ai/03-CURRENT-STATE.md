@@ -54,8 +54,7 @@
 
 **Sistema de Reportes Unificado:**
 - Endpoint POST `/api/v1/reports` para reportar posts o alerts
-- Razones: `inappropriate`, `spam`, `incorrect_location`, `other`
-- Tipo `incorrect_location` para correcciones de ubicación
+- Razones: `not_animal`, `inappropriate`, `spam`, `other`
 - Campo `description` opcional para detalles
 - Guarda `reporter_ip` automáticamente
 - Notificación automática por email al moderador (SMTP)
@@ -82,11 +81,12 @@
 - Filtros: animal_type, date_from, date_to
 - Límite configurable (max 2000 puntos)
 
-**Infraestructura CLIP (Preparada):**
+**Infraestructura CLIP (Preparada pero NO implementada):**
 - Campo `embedding VECTOR(512)` en DB
 - Índice HNSW para búsqueda rápida
-- Endpoint `/search/similar` definido
-- **PENDIENTE:** Integrar modelo CLIP, generar embeddings al crear posts
+- ❌ Endpoint `/search/similar` NO existe en código real
+- ❌ No se generan embeddings al crear posts
+- **PENDIENTE:** Integrar modelo CLIP completamente (backend + frontend)
 
 #### Frontend ✅
 
@@ -168,9 +168,10 @@
 
 - **PostCard**: Tarjeta de post con thumbnail, indicador de múltiples imágenes, iconos de sexo (♂♀?), truncado de descripción, fecha relativa
 - **FilterBar**: Barra de filtros colapsable con badge de filtros activos, contador de publicaciones, chips de filtros activos con botón X, dropdowns de provincia y localidad con conteos, presets de fecha
-- **ReportModal**: Modal para reportar contenido con radio buttons (inapropiado, spam, ubicación incorrecta, otro), textarea opcional, loading y success states
+- **ReportModal**: Modal para reportar contenido con radio buttons (no es animal, inapropiado, spam, otro), textarea opcional, loading y success states
 - **Layout + BottomNav**: Navegación inferior fija con 4 botones (Home, Avisos, Buscar, Mapa)
 - **FAB**: Floating Action Button para crear nueva publicación
+- **HelpModal**: Modal con información del proyecto, privacidad y datos abiertos
 
 **Hooks:**
 
@@ -178,6 +179,13 @@
 - `useAlerts(filters)`: Fetch alerts
 - `usePullToRefresh()`: Pull-to-refresh gesture
 - `useAutoRefresh(callback, interval)`: Auto-refresh periódico con timestamp
+- `useContentValidation()`: Validación de imágenes con NSFW.js (detección client-side)
+
+**Utilities:**
+
+- `validateText(text)`: Validación de texto con 9 reglas (spam, contenido inapropiado, caracteres mínimos, etc.)
+- `sanitizeText(text)`: Sanitización de texto antes de enviar
+- `containsContactInfo(text)`: Detección de teléfonos/emails en texto
 
 **Tema Día/Noche:**
 - Sistema completo con CSS variables
@@ -186,15 +194,23 @@
 - Variaciones de hover sutiles
 - Toggle en header
 
+**Datos Estáticos (Offline-First):**
+- Provincias y localidades cargadas desde JSON local (`/data/provincias.json`, `/data/localidades.json`)
+- 24 provincias argentinas
+- 3,979 localidades
+- Mejora performance y funciona offline
+
 ### 3.2 Features No Implementadas
 
-**Búsqueda por Similitud CLIP (UI):**
-- Backend: Endpoint `/search/similar` definido
-- Frontend: Falta UI de upload de imagen
-- **PENDIENTE:** Integrar modelo CLIP, generar embeddings al crear posts, mostrar resultados con % de similitud
+**Búsqueda por Similitud CLIP:**
+- ❌ Endpoint `/search/similar` NO existe en código (solo documentado)
+- ❌ No se generan embeddings al crear posts
+- ❌ Frontend: No hay UI de upload de imagen para búsqueda
+- **PENDIENTE:** Implementar completamente (backend + frontend + generación de embeddings)
 
 **PWA Completo:**
-- Falta: manifest.json con iconos, service worker para offline, cache de imágenes, install prompt
+- ⚠️ Componente PWAInstallPrompt existe pero sin verificar funcionalidad
+- Falta verificar: manifest.json con iconos, service worker para offline, cache de imágenes
 
 **Autenticación JWT:**
 - Config lista (JWT_SECRET, JWT_ALGORITHM en .env)

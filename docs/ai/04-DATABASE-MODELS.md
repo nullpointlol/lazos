@@ -7,7 +7,7 @@
 │                          POSTS                                │
 ├──────────────────────────────────────────────────────────────┤
 │ id              UUID PRIMARY KEY                             │
-│ post_number     INTEGER UNIQUE NOT NULL  -- autoincremental  │
+│ post_number     INTEGER UNIQUE  -- numeración secuencial     │
 │ image_url       VARCHAR(500) (backward compat)               │
 │ thumbnail_url   VARCHAR(500) (backward compat)               │
 │ sex             ENUM('male','female','unknown')              │
@@ -21,9 +21,11 @@
 │ updated_at      TIMESTAMP                                    │
 │ is_active       BOOLEAN DEFAULT TRUE                         │
 │ pending_approval BOOLEAN DEFAULT FALSE  -- moderación IA     │
-│ moderation_reason TEXT  -- motivo de moderación              │
+│ moderation_reason VARCHAR(500)  -- motivo de moderación      │
+│ moderation_date TIMESTAMP  -- fecha de moderación            │
+│ validation_service VARCHAR(50)  -- servicio validador        │
 │ contact_method  VARCHAR(200)                                 │
-│ embedding       VECTOR(512)  -- CLIP embedding               │
+│ embedding       VECTOR(512)  -- CLIP embedding (no usado)    │
 │ user_id         UUID REFERENCES users(id) NULL               │
 └──────────────────────────────────────────────────────────────┘
                     │
@@ -61,8 +63,8 @@
 │ id              UUID PRIMARY KEY                             │
 │ post_id         UUID REFERENCES posts(id) NULL               │
 │ alert_id        UUID REFERENCES alerts(id) NULL              │
-│ reason          ENUM('inappropriate','spam',                 │
-│                      'incorrect_location','other') NOT NULL  │
+│ reason          ENUM('not_animal','inappropriate',           │
+│                      'spam','other') NOT NULL                │
 │ description     TEXT                                         │
 │ reporter_ip     VARCHAR(45)                                  │
 │ created_at      TIMESTAMP DEFAULT NOW()                      │
