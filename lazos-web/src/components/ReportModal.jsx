@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
+import { API_URL } from '@/config/api'
 
 const REPORT_REASONS = [
   { value: 'not_animal', label: 'No es un animal' },
@@ -15,7 +16,6 @@ export default function ReportModal({ postId, alertId, isOpen, onClose }) {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState(null)
 
-  import { API_URL } from '@/config/api'
   const itemType = postId ? 'publicación' : 'aviso'
 
   const handleSubmit = async (e) => {
