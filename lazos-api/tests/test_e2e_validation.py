@@ -15,7 +15,15 @@ from app.api.deps import get_db as api_get_db
 
 client = TestClient(app)
 
-IMG_TEST_DIR = Path(__file__).resolve().parent / "fixtures"
+import os
+
+# Imágenes reales para el e2e (llama a Cloudflare de verdad): no se versionan.
+# Poné img_test.jpg e img_test_with_text.jpg en LAZOS_IMG_TEST_DIR (por defecto, tests/fixtures).
+IMG_TEST_DIR = Path(os.environ.get("LAZOS_IMG_TEST_DIR", Path(__file__).resolve().parent / "fixtures"))
+pytestmark = pytest.mark.skipif(
+    not (IMG_TEST_DIR / "img_test.jpg").exists(),
+    reason="faltan las imágenes de prueba en LAZOS_IMG_TEST_DIR",
+)
 
 @pytest.fixture
 def mock_db():

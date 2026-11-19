@@ -61,3 +61,6 @@ playwright-report/
 test-results/
 img tests/
 *.err.log
+
+# Imágenes reales para el e2e de la API
+lazos-api/tests/fixtures/
