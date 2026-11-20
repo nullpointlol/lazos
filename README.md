@@ -11,6 +11,13 @@ el mapa para que su familia lo encuentre. Sin registro ni publicidad.
   <img src="docs/capturas/buscar.png" alt="Buscador" width="250">
 </p>
 
+## Qué hace
+
+- Publicación de avistamientos
+- Mapa colaborativo
+- Búsqueda por zona
+- Moderación automática
+
 ## Cómo
 
 1. Ves un perro o un gato suelto: sacás una foto o, si se mueve rápido, cargás un aviso sin foto.
